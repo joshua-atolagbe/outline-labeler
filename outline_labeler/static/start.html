@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Outline Labeler</title>
+<link rel="stylesheet" href="/static/app.css">
+<link rel="icon" href="/static/logo.svg" type="image/svg+xml">
+<style>
+  body { overflow-y: auto; }
+  .page { max-width: 980px; margin: 0 auto; padding: 22px 20px 40px; }
+  .top { display: flex; align-items: baseline; gap: 10px; margin-bottom: 18px; }
+  .top h1 { font-size: 20px; margin: 0; }
+  .top .v { color: var(--muted); }
+  .cols { display: grid; grid-template-columns: 1.15fr 1fr; gap: 18px; align-items: start; }
+  @media (max-width: 820px) { .cols { grid-template-columns: 1fr; } }
+  .card { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 14px 16px; margin-bottom: 18px; }
+  .card h2 { font-size: 12px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin: 0 0 10px; font-weight: 600; }
+  .proj { display: grid; grid-template-columns: 1fr auto; gap: 2px 10px; padding: 10px 0; border-top: 1px solid var(--line); }
+  .proj:first-of-type { border-top: 0; padding-top: 2px; }
+  .proj .n { font-weight: 600; font-size: 14px; }
+  .proj .p { color: var(--muted); font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; direction: rtl; text-align: left; }
+  .proj .s { color: var(--ink2); font-size: 12px; }
+  .proj .act { grid-row: 1 / 4; grid-column: 2; display: flex; gap: 6px; align-items: center; }
+  .bar { height: 5px; background: #ecebe6; border-radius: 3px; overflow: hidden; margin-top: 4px; }
+  .bar i { display: block; height: 100%; background: var(--ok); }
+  label.f { display: block; font-size: 12px; color: var(--ink2); margin: 10px 0 4px; }
+  .inrow { display: flex; gap: 6px; }
+  .inrow input { flex: 1; min-width: 0; }
+  input.t, textarea { width: 100%; padding: 6px 8px; border: 1px solid var(--line); border-radius: 6px; font: inherit; background: #fff; }
+  textarea { min-height: 92px; resize: vertical; }
+  .note { font-size: 12px; color: var(--muted); margin-top: 4px; }
+  .err { color: var(--warn); font-size: 12.5px; margin-top: 8px; min-height: 1em; }
+  .ok { color: var(--ok); }
+  .samline { display: flex; gap: 8px; align-items: flex-start; }
+  .dot { width: 10px; height: 10px; border-radius: 50%; margin-top: 4px; flex: none; background: #c9c5bb; }
+  .dot.on { background: var(--ok); }
+  details { margin-top: 8px; }
+  summary { cursor: pointer; color: var(--ink2); font-size: 12px; }
+  #fb .path { display: flex; gap: 6px; margin-bottom: 8px; }
+  #fb .path input { flex: 1; }
+  #fbList { height: 320px; overflow-y: auto; border: 1px solid var(--line); border-radius: 6px; }
+  #fbList div { padding: 5px 10px; cursor: pointer; border-bottom: 1px solid #f0eee9; }
+  #fbList div:hover { background: #f4f2ed; }
+  #fbList div::before { content: "📁 "; }
+  #fbList div.none::before { content: ""; }
+  #fb { width: 620px; }
+  .empty { color: var(--muted); padding: 6px 0; }
+</style>
+</head>
+<body>
+<div class="page">
+  <div class="top"><img src="/static/logo.svg" alt="" width="40" height="40" style="align-self:center"><h1>Outline Labeler</h1><span class="v" id="ver"></span></div>
+  <div class="cols">
+    <div>
+      <div class="card" id="recentCard">
+        <h2>Your projects</h2>
+        <div id="recent"><div class="empty">Loading…</div></div>
+      </div>
+      <div class="card local">
+        <h2>Open a project folder</h2>
+        <div class="inrow"><input class="t" id="openPath" placeholder="A folder made by Outline Labeler (holds project.json)"><button data-browse="openPath">Browse…</button><button id="openGo">Open</button></div>
+        <div class="err" id="openErr"></div>
+      </div>
+    </div>
+    <div>
+      <div class="card local">
+        <h2>New project</h2>
+        <label class="f" for="imgPath">Folder of images (subfolders are included)</label>
+        <div class="inrow"><input class="t" id="imgPath" placeholder="e.g. /home/me/thin_sections"><button data-browse="imgPath" class="primary">Browse…</button></div>
+        <div class="note" id="imgNote"></div>
+        <label class="f" for="classes">Classes: one per line, or separated by commas (you can change them later)</label>
+        <textarea id="classes" placeholder="Micrite&#10;Cement&#10;Echinoderms&#10;Foraminifera"></textarea>
+        <details>
+          <summary>Where labels are saved, and image size</summary>
+          <label class="f" for="projPath">Project folder (labels and settings)</label>
+          <div class="inrow"><input class="t" id="projPath" placeholder="next to the image folder: <images>_labels"><button data-browse="projPath">Browse…</button></div>
+          <label class="f" for="maxSide">Largest size to label at, in pixels (masks are still exported at full size)</label>
+          <input class="t" id="maxSide" type="number" min="256" max="16384" step="256" value="3072" style="width:120px">
+        </details>
+        <div class="row right" style="margin-top:12px"><button id="create" class="primary">Start labelling</button></div>
+        <div class="err" id="createErr"></div>
+      </div>
+      <div class="card local" id="samCard">
+        <h2>Segment Anything (smart click)</h2>
+        <div id="sam"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<dialog id="fb">
+  <h3>Choose a folder</h3>
+  <div class="path"><button id="fbUp" title="Up one level">↑</button><input class="t" id="fbPath"><button id="fbGo">Go</button><button id="fbHome" title="Home folder">⌂</button></div>
+  <div id="fbList"></div>
+  <div class="note" id="fbInfo"></div>
+  <div class="row right"><button id="fbCancel">Cancel</button><button id="fbPick" class="primary">Choose this folder</button></div>
+</dialog>
+
+<script src="/static/start.js"></script>
+</body>
+</html>

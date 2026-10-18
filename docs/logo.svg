@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128" role="img" aria-label="Outline Labeler">
+<title>Outline Labeler</title>
+<g transform="translate(0 0) scale(1.0)">
+  <rect width="128" height="128" rx="28" fill="#1e2430"/>
+  <g fill="none" stroke="#d9d3c5" stroke-width="3.5" stroke-linejoin="round">
+  <path d="M22 31C26 19 45 16 53 24C60 31 58 45 48 51C38 57 23 54 19.5 44C17.5 38.5 19.5 35 22 31Z"/>
+  <path d="M66 21C78 14 99 16 105 28C110 38 104 49 92 51.5C80 54 67 48.5 63.5 38.5C61.5 31 61.5 24 66 21Z"/>
+  <path d="M20 67C26 60.5 41 60.5 47 68C53 76.5 51 95 41.5 103C32 109.5 20.5 104 17.5 92.5C15.5 83 15.5 72 20 67Z"/>
+  </g>
+  <path d="M60 64.5C68 56 91.5 56 103.5 64C112.5 71 112 92 102 102C92 111 72.5 110 63.5 101.5C55.5 92.5 53.5 72.5 60 64.5Z" fill="#4f7cf0" stroke="#ffffff" stroke-width="4.5"/>
+  <circle cx="83" cy="84" r="6" fill="#ffffff"/>
+  <circle cx="83" cy="84" r="2.6" fill="#2c5fd6"/>
+</g>
+</svg>

@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Outline Labeler</title>
+<link rel="stylesheet" href="/static/app.css">
+<link rel="icon" href="/static/logo.svg" type="image/svg+xml">
+</head>
+<body>
+<div id="app">
+  <header>
+    <a class="brand" href="/" title="All projects"><img src="/static/logo.svg" alt="">Outline&nbsp;Labeler</a>
+    <div class="meta" id="meta">loading…</div>
+    <div class="grow"></div>
+    <button id="who" class="ghost" title="Your name is saved with your labels">—</button>
+    <span id="save" class="save"></span>
+    <button id="prev" title="Previous image ( , )">‹</button>
+    <span id="progress" class="progress"></span>
+    <button id="next" title="Next image ( . )">›</button>
+    <button id="done" class="primary" title="Mark this image done and go to the next one (Enter)">Done ✓</button>
+  </header>
+
+  <nav id="tools">
+    <button data-tool="pieces" title="Pieces (V): click or drag over the automatic pieces to select them, then press a class key">
+      <svg viewBox="0 0 24 24"><path d="M3 3h8v8H3zM13 3h8v5h-8zM13 10h8v11h-8zM3 13h8v8H3z"/></svg><span>V</span></button>
+    <button data-tool="brush" title="Brush (B): paint the active class; [ and ] change the size">
+      <svg viewBox="0 0 24 24"><path d="M20 4 9 15l-2-2L18 2zM7 15c-2 0-4 1.5-4 4 0 1-1 2-2 2 2 1 6 1 8-1 1.5-1.5 1-4-2-5z"/></svg><span>B</span></button>
+    <button data-tool="eraser" title="Eraser (E): make pixels unlabelled">
+      <svg viewBox="0 0 24 24"><path d="m16 3 5 5-10 10H6l-3-3zM6 18h14v2H6z"/></svg><span>E</span></button>
+    <button data-tool="polygon" title="Polygon / lasso (P): click corners, or hold and drag; close on the first point, double-click or Enter; then press a class key">
+      <svg viewBox="0 0 24 24"><path d="M4 7 12 3l8 6-3 11H7z" fill="none" stroke-width="2"/></svg><span>P</span></button>
+    <button data-tool="smart" title="Smart click (S): click inside an object to outline it (Segment Anything); right-click marks what is not part of it">
+      <svg viewBox="0 0 24 24"><path d="M12 2l2.4 6.6L21 11l-6.6 2.4L12 20l-2.4-6.6L3 11l6.6-2.4z"/></svg><span>S</span></button>
+    <div class="sep"></div>
+    <div class="size" title="Brush size ([ and ])"><span id="sizeval">12</span><small>px</small></div>
+    <button id="protect" class="toggle" title="Protect labels: new labels only fill unlabelled pixels">
+      <svg viewBox="0 0 24 24"><path d="M12 2 4 5v6c0 5 3.5 9.5 8 11 4.5-1.5 8-6 8-11V5z"/></svg></button>
+    <button id="tLabels" class="toggle on" title="Show labels (L); hold H to peek at the bare image">
+      <svg viewBox="0 0 24 24"><path d="M12 5C6 5 2 12 2 12s4 7 10 7 10-7 10-7-4-7-10-7zm0 11a4 4 0 1 1 0-8 4 4 0 0 1 0 8z"/></svg></button>
+    <button id="tEdges" class="toggle on" title="Show piece outlines (O)">
+      <svg viewBox="0 0 24 24"><path d="M3 3h18v18H3zM3 12h18M12 3v18" fill="none" stroke-width="1.6"/></svg></button>
+    <button id="fit" title="Fit image (=)"><svg viewBox="0 0 24 24"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" fill="none" stroke-width="2"/></svg></button>
+    <button id="undo" title="Undo (Ctrl+Z)"><svg viewBox="0 0 24 24"><path d="M9 7H4V2M4 7a9 9 0 1 1-1 6" fill="none" stroke-width="2"/></svg></button>
+    <button id="redo" title="Redo (Ctrl+Shift+Z)"><svg viewBox="0 0 24 24"><path d="M15 7h5V2M20 7a9 9 0 1 0 1 6" fill="none" stroke-width="2"/></svg></button>
+    <div class="grow"></div>
+    <button id="help" title="Keys and mouse (?)">?</button>
+  </nav>
+
+  <main id="stage">
+    <canvas id="view"></canvas>
+    <div id="busy" class="busy hidden">finding pieces…</div>
+    <div id="toast" class="toast hidden"></div>
+    <div id="conflict" class="banner hidden">
+      Someone else saved this image after you opened it.
+      <button id="theirs">Load their version</button> <button id="mine">Keep mine</button>
+    </div>
+  </main>
+
+  <aside>
+    <section>
+      <h2>Classes <button id="addClass" class="small">+ Add</button></h2>
+      <div id="classes"></div>
+      <div class="row">
+        <button id="unlabel" class="small" title="Delete: make the selection unlabelled">Unlabel selection <kbd>Del</kbd></button>
+      </div>
+      <p class="hint" id="classHint"></p>
+    </section>
+    <section>
+      <h2>Pieces</h2>
+      <div class="seg" id="gran"></div>
+      <div class="seg" id="method"></div>
+    </section>
+    <section>
+      <h2>View</h2>
+      <label class="slider">Colour strength <input id="alpha" type="range" min="0" max="0.9" step="0.05" value="0.4"></label>
+    </section>
+    <section class="images">
+      <h2>Images <span id="count" class="muted"></span></h2>
+      <div class="seg" id="filter"><button data-f="all" class="on">All</button><button data-f="todo">To do</button><button data-f="done">Done</button></div>
+      <input id="search" type="search" placeholder="Find an image">
+      <div id="list"></div>
+    </section>
+    <section>
+      <button id="export" class="wide">Export labels…</button>
+    </section>
+  </aside>
+
+  <footer id="info">&nbsp;</footer>
+</div>
+
+<dialog id="dlgHelp">
+  <h3>Keys and mouse</h3>
+  <div class="keys">
+    <div class="h">Label</div>
+    <div><kbd>1</kbd>…<kbd>0</kbd> or the class key</div><div>give the selection that class; with nothing selected, choose the brush class</div>
+    <div><kbd>Del</kbd></div><div>make the selection unlabelled</div>
+    <div><kbd>Ctrl</kbd>+<kbd>A</kbd></div><div>select the whole image (with protect on, a class key then fills only what is unlabelled)</div>
+    <div><kbd>Esc</kbd></div><div>clear the selection, polygon or smart points</div>
+    <div class="h">Tools</div>
+    <div><kbd>V</kbd></div><div>pieces: click a piece, shift+click to add or remove, drag to brush over several</div>
+    <div><kbd>B</kbd> / <kbd>E</kbd></div><div>brush / eraser; <kbd>[</kbd> <kbd>]</kbd> size</div>
+    <div><kbd>P</kbd></div><div>polygon: click corners or drag freehand; close on the first point, double-click or <kbd>Enter</kbd>; <kbd>Backspace</kbd> removes the last corner</div>
+    <div><kbd>S</kbd></div><div>smart click: click inside an object; right-click outside it to trim</div>
+    <div class="h">View</div>
+    <div>wheel</div><div>zoom</div>
+    <div>right-drag, middle-drag, <kbd>Space</kbd>+drag</div><div>move around</div>
+    <div><kbd>=</kbd></div><div>fit the image</div>
+    <div><kbd>H</kbd> (hold) / <kbd>L</kbd></div><div>peek at the bare image / labels on or off</div>
+    <div><kbd>O</kbd></div><div>piece outlines on or off</div>
+    <div class="h">Images</div>
+    <div><kbd>Enter</kbd></div><div>mark done and go to the next image</div>
+    <div><kbd>,</kbd> / <kbd>.</kbd></div><div>previous / next image</div>
+    <div><kbd>Ctrl</kbd>+<kbd>Z</kbd> / <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Z</kbd></div><div>undo / redo</div>
+  </div>
+  <p class="hint">Everything is saved as you go. Pixels you leave unlabelled are exported as 0.</p>
+  <form method="dialog"><button class="primary">Close</button></form>
+</dialog>
+
+<dialog id="dlgExport">
+  <h3>Export labels</h3>
+  <label><input type="checkbox" name="masks" checked> Masks: class id per pixel (PNG)</label>
+  <label><input type="checkbox" name="color" checked> Colour masks (PNG)</label>
+  <label><input type="checkbox" name="coco" checked> COCO polygons (JSON)</label>
+  <label><input type="checkbox" name="full" checked> Original image size</label>
+  <label><input type="checkbox" name="done"> Only images marked done</label>
+  <p class="hint">A zip is downloaded; the same files are kept in the project's <code>exports</code> folder.</p>
+  <div class="row right"><button id="exCancel">Cancel</button><button id="exGo" class="primary">Export</button></div>
+</dialog>
+
+<dialog id="dlgName">
+  <h3>Who is labelling?</h3>
+  <p class="hint">Your name is stored with the labels you save.</p>
+  <input id="nameInput" type="text" placeholder="Your name" autocomplete="name">
+  <div class="row right"><button id="nameGo" class="primary">Start</button></div>
+</dialog>
+
+<script src="/static/app.js"></script>
+</body>
+</html>
